@@ -1,0 +1,79 @@
+postgres=# CREATE TABLE IF NOT EXISTS students (
+  student_id     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  first_name     TEXT NOT NULL,
+  last_name      TEXT NOT NULL,
+  email          TEXT UNIQUE NOT NULL,
+  faculty        TEXT NOT NULL,
+  date_of_birth  DATE,
+  enrolled_on    DATE NOT NULL
+);
+CREATE TABLE
+
+postgres=# INSERT INTO students (first_name, last_name, email, faculty, date_of_birth, enrolled_on) VALUES
+  ('Alice','Kim','alice.kim@example.com','Engineering','2004-06-12','2022-09-01'),
+  ('Diego','Ramos','diego.ramos@example.com','Business','2003-11-02','2021-09-01'),
+  ('Fatima','Hassan','fatima.hassan@example.com','Science','2005-01-25','2023-02-15'),
+  ('Ilya','Sokolov','ilya.sokolov@example.com','Arts','2004-03-18','2022-01-10'),
+  ('Mina','Takeda','mina.takeda@example.com','Engineering','2003-09-09','2021-08-25');
+INSERT 0 5
+
+postgres=# select * from students;
+ student_id | first_name | last_name |           email           |   faculty   | date_of_birth | enrolled_on 
+------------+------------+-----------+---------------------------+-------------+---------------+-------------
+          1 | Alice      | Kim       | alice.kim@example.com     | Engineering | 2004-06-12    | 2022-09-01
+          2 | Diego      | Ramos     | diego.ramos@example.com   | Business    | 2003-11-02    | 2021-09-01
+          3 | Fatima     | Hassan    | fatima.hassan@example.com | Science     | 2005-01-25    | 2023-02-15
+          4 | Ilya       | Sokolov   | ilya.sokolov@example.com  | Arts        | 2004-03-18    | 2022-01-10
+          5 | Mina       | Takeda    | mina.takeda@example.com   | Engineering | 2003-09-09    | 2021-08-25
+(5 rows)
+
+postgres=# select first_name, last_name, faculty from students where first_name = 'Alice';
+ first_name | last_name |   faculty   
+------------+-----------+-------------
+ Alice      | Kim       | Engineering
+(1 row)
+
+postgres=# select first_name, last_name from students order by date_of_birth;
+ first_name | last_name 
+------------+-----------
+ Mina       | Takeda
+ Diego      | Ramos
+ Ilya       | Sokolov
+ Alice      | Kim
+ Fatima     | Hassan
+(5 rows)
+
+postgres=# select first_name, last_name from students order by date_of_birth desc;
+ first_name | last_name 
+------------+-----------
+ Fatima     | Hassan
+ Alice      | Kim
+ Ilya       | Sokolov
+ Diego      | Ramos
+ Mina       | Takeda
+(5 rows)
+
+postgres=# select first_name, last_name from students limit 3;
+ first_name | last_name 
+------------+-----------
+ Alice      | Kim
+ Diego      | Ramos
+ Fatima     | Hassan
+(3 rows)
+
+postgres=# select first_name, last_name, enrolled_on from students order by enrolled_on desc limit 2;
+ first_name | last_name | enrolled_on 
+------------+-----------+-------------
+ Fatima     | Hassan    | 2023-02-15
+ Alice      | Kim       | 2022-09-01
+(2 rows)
+
+postgres=# select first_name, last_name from students where faculty = 'Engineering'; -- This is a query
+ first_name | last_name 
+------------+-----------
+ Alice      | Kim
+ Mina       | Takeda
+(2 rows)
+
+postgres=# \q
+
