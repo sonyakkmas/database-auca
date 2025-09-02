@@ -1,0 +1,14 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.18 (Ubuntu 14.18-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# 
+postgres=# CREATE DATABASE user_messages;
+CREATE DATABASE
+postgres=# \c user_messages
+You are now connected to database "user_messages" as user "postgres".
+user_messages=# \c postgres
+You are now connected to database "postgres" as user "postgres".
+postgres=# DROP DATABASE user_messages;
+DROP DATABASE
+postgres=# \q
