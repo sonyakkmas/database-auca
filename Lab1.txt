@@ -1,0 +1,64 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.18 (Ubuntu 14.18-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# \l
+                                     List of databases
+   Name    |  Owner   | Encoding |   Collate   |    Ctype    |      Access privileges      
+-----------+----------+----------+-------------+-------------+-----------------------------
+ clicker   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres               +
+           |          |          |             |             | postgres=CTc/postgres      +
+           |          |          |             |             | postgres_clicker=c/postgres
+ postgres  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+ template0 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres                +
+           |          |          |             |             | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres                +
+           |          |          |             |             | postgres=CTc/postgres
+(4 rows)
+
+postgres=# \c clicker
+You are now connected to database "clicker" as user "postgres".
+clicker=# \c postgres
+You are now connected to database "postgres" as user "postgres".
+postgres=# \dt
+Did not find any relations.
+postgres=# \c clicker
+You are now connected to database "clicker" as user "postgres".
+clicker=# \dt
+               List of relations
+ Schema |       Name        | Type  |  Owner   
+--------+-------------------+-------+----------
+ public | chest             | table | postgres
+ public | item              | table | postgres
+ public | metrics_exporter  | table | postgres
+ public | notification      | table | postgres
+ public | purchase          | table | postgres
+ public | session           | table | postgres
+ public | task              | table | postgres
+ public | user              | table | postgres
+ public | userPhoto         | table | postgres
+ public | user_friends_user | table | postgres
+(10 rows)
+
+clicker=# \c postgres
+You are now connected to database "postgres" as user "postgres".
+postgres=# \h
+postgres=# \?
+postgres=# CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    age INT
+);
+CREATE TABLE
+postgres=# INSERT INTO students (name, age) VALUES ('Alice', 21), ('Bob', 23);
+INSERT 0 2
+postgres=# SELECT * FROM students;
+ id | name  | age 
+----+-------+-----
+  1 | Alice |  21
+  2 | Bob   |  23
+(2 rows)
+
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# \q
