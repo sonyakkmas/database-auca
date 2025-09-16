@@ -1,0 +1,199 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# -- BAD: Multiple phone numbers in one column
+CREATE TABLE students_bad (
+        student_id INT PRIMARY KEY,
+        name VARCHAR(100),
+        phone_numbers TEXT
+);
+CREATE TABLE
+postgres=# DROP TABLE students_bad;
+DROP TABLE
+postgres=# -- GOOD: Atomic values
+CREATE TABLE students (
+        student_id INT PRIMARY KEY,
+        name VARCHAR(100)
+);
+
+CREATE TABLE student_phones (
+        student_id INT,
+        phone_number VARCHAR(15),
+        phone_type VARCHAR(20),
+
+        PRIMARY KEY (student_id, phone_number),
+        FOREIGN KEY (student_id) REFERENCES students(student_id)
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# -- BAD: course_name depends only on course_id, not on the full primary key
+CREATE TABLE enrollments_bad (
+        student_id INT,
+        course_id INT,
+        course_name VARCHAR(100),
+        grade CHAR(2),
+        PRIMARY KEY (student_id, course_id)
+);
+CREATE TABLE
+postgres=# -- GOOD: Separate tables
+
+CREATE TABLE courses (
+        course_id INT PRIMARY KEY,
+        course_name VARCHAR(100),
+        credits INT
+);
+
+CREATE TABLE enrollments (
+        student_id INT,
+        course_id INT,
+        grade CHAR(2),
+
+        PRIMARY KEY (student_id, course_id),
+        FOREIGN KEY (student_id) REFERENCES students(student_id),
+        FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# \dr
+invalid command \dr
+Try \? for help.
+postgres=# \dt
+              List of relations
+ Schema |      Name       | Type  |  Owner   
+--------+-----------------+-------+----------
+ public | courses         | table | postgres
+ public | enrollments     | table | postgres
+ public | enrollments_bad | table | postgres
+ public | student_phones  | table | postgres
+ public | students        | table | postgres
+(5 rows)
+
+postgres=# DROP TABLE enrollments;
+DROP TABLE
+postgres=# DROP TABLE courses;
+DROP TABLE
+postgres=# DROP TABLE enrollments_bad;
+DROP TABLE
+postgres=# DROP TABLE student_phones;
+DROP TABLE
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# -- BAD: department_name depends on department_id, which depends on student_id
+
+CREATE TABLE students_bad (
+        student_id INT PRIMARY KEY,
+        name VARCHAR(100),
+        department_id INT,
+        department_name VARCHAR(100)
+);
+CREATE TABLE
+postgres=# -- GOOD: Separate department information
+
+CREATE TABLE departments (
+        department_id INT PRIMARY KEY,
+        department_name VARCHAR(100),
+        department_head VARCHAR(100)
+);
+
+CREATE TABLE students (
+        student_id INT PRIMARY KEY,
+        name VARCHAR(100),
+        department_id INT,
+
+        FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# \dt
+            List of relations
+ Schema |     Name     | Type  |  Owner   
+--------+--------------+-------+----------
+ public | departments  | table | postgres
+ public | students     | table | postgres
+ public | students_bad | table | postgres
+(3 rows)
+
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# DROP TABLE students_bad;
+DROP TABLE
+postgres=# DROP TANLE departments;
+ERROR:  syntax error at or near "TANLE"
+LINE 1: DROP TANLE departments;
+             ^
+postgres=# DROP TABLE departments;
+DROP TABLE
+postgres=# CREATE TABLE authors (
+        author_id SERIAL PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        birth_date DATE
+);
+
+CREATE TABLE books (
+        book_id SERIAL PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        isbn VARCHAR(13) UNIQUE,
+        publication_year INTEGER,
+        available_copies INTEGER DEFAULT 1
+);
+
+CREATE TABLE book_authors (
+        book_id INTEGER,
+        author_id INTEGER,
+
+        PRIMARY KEY (book_id, author_id),
+        FOREIGN KEY (book_id) REFERENCES books(book_id),
+        FOREIGN KEY (author_id) REFERENCES authors(author_id)
+);
+
+CREATE TABLE members (
+        member_id SERIAL PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        phone VARCHAR(15),
+        membership_date DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE loans (
+        loan_id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL,
+        book_id INTEGER NOT NULL,
+        load_date DATE DEFAULT CURRENT_DATE,
+        due_date DATE NOT NULL,
+        return_date DATE,
+        late_fee DECIMAL(10,2) DEFAULT 0.00,
+
+        FOREIGN KEY (member_id) REFERENCES members(member_id),
+        FOREIGN KEY (book_id) REFERENCES books(book_id)
+);
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+postgres=# \dt
+            List of relations
+ Schema |     Name     | Type  |  Owner   
+--------+--------------+-------+----------
+ public | authors      | table | postgres
+ public | book_authors | table | postgres
+ public | books        | table | postgres
+ public | loans        | table | postgres
+ public | members      | table | postgres
+(5 rows)
+
+postgres=# DROP TABLE loans;
+DROP TABLE
+postgres=# DROP TABLE members;
+DROP TABLE
+postgres=# DROP TABLE book_authors;
+DROP TABLE
+postgres=# DROP TABLE books;
+DROP TABLE
+postgres=# DROP TABLE authors;
+DROP TABLE
+postgres=# \q
+sonya@sonya-laptop:~$
