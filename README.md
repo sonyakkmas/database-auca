@@ -1,9 +1,9 @@
 # Database Course (PostgreSQL)
 
-This repository contains completed laboratory works for a university Database course. Each `LabN.txt` file is a real console transcript from `psql` (including prompts and output) showing exactly what I ran and what Postgres returned.
+This repository contains completed laboratory works for a university Database course. Each `LabN.txt` file is a real console transcript from `psql` (including prompts and output) showing exact commands and what Postgres returned.
 
 * **Environment used:** PostgreSQL **14.18 → 14.19** on Ubuntu 22.04, `psql` CLI.
-* **Important:** When reproducing, copy **only the SQL commands** (skip lines that start with `sonya@…$` or `postgres=#` / `clicker=#`).
+
 
 ---
 
