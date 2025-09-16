@@ -23,7 +23,7 @@ Lab9.txt  — Database Design Basics: normalization examples
 
 ## Academic honesty & ownership
 
-These are **my own laboratory works** for coursework. **Do not copy** for submissions where that would violate institution’s policy.
+These are my own laboratory works for coursework. **Do not copy** for submissions where that would violate institution’s policy.
 
 ---
 
