@@ -17,6 +17,7 @@ Lab6.txt  — Tables, Data Types and Constraints: DROP/CREATE, ALTER TYPE, add U
 Lab7.txt  — Primary keys: primary keys (inline/named), composite PKs, 
 Lab8.txt  — Foreign Keys and Relationships: defining FKs, rebuilding tables, join queries
 Lab9.txt  — Database Design Basics: normalization examples
+Lab10.txt — Viewing Database and Table Structure
 ```
 
 ---

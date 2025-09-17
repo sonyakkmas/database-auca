@@ -1,0 +1,115 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# CREATE TABLE authors (
+        author_id SERIAL PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        birth_date DATE
+);
+
+CREATE TABLE books (
+        book_id SERIAL PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        isbn VARCHAR(13) UNIQUE,
+        publication_year INTEGER,
+        available_copies INTEGER DEFAULT 1
+);
+
+CREATE TABLE book_authors (
+        book_id INTEGER,
+        author_id INTEGER,
+
+        PRIMARY KEY (book_id, author_id),
+        FOREIGN KEY (book_id) REFERENCES books(book_id),
+        FOREIGN KEY (author_id) REFERENCES authors(author_id)
+);
+
+CREATE TABLE members (
+        member_id SERIAL PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        phone VARCHAR(15),
+        membership_date DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE loans (
+        loan_id SERIAL PRIMARY KEY,
+        member_id INTEGER NOT NULL,
+        book_id INTEGER NOT NULL,
+        load_date DATE DEFAULT CURRENT_DATE,
+        due_date DATE NOT NULL,
+        return_date DATE,
+        late_fee DECIMAL(10,2) DEFAULT 0.00,
+
+        FOREIGN KEY (member_id) REFERENCES members(member_id),
+        FOREIGN KEY (book_id) REFERENCES books(book_id)
+);
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+postgres=# 
+postgres=# \dt
+            List of relations
+ Schema |     Name     | Type  |  Owner   
+--------+--------------+-------+----------
+ public | authors      | table | postgres
+ public | book_authors | table | postgres
+ public | books        | table | postgres
+ public | loans        | table | postgres
+ public | members      | table | postgres
+(5 rows)
+
+postgres=# \d authors
+                                         Table "public.authors"
+   Column   |         Type          | Collation | Nullable |                  Default                   
+------------+-----------------------+-----------+----------+--------------------------------------------
+ author_id  | integer               |           | not null | nextval('authors_author_id_seq'::regclass)
+ first_name | character varying(50) |           | not null | 
+ last_name  | character varying(50) |           | not null | 
+ birth_date | date                  |           |          | 
+Indexes:
+    "authors_pkey" PRIMARY KEY, btree (author_id)
+Referenced by:
+    TABLE "book_authors" CONSTRAINT "book_authors_author_id_fkey" FOREIGN KEY (author_id) REFERENCES authors(author_id)
+
+postgres=# \d books
+postgres=# \d books
+                                           Table "public.books"
+      Column      |          Type          | Collation | Nullable |                Default                 
+------------------+------------------------+-----------+----------+----------------------------------------
+ book_id          | integer                |           | not null | nextval('books_book_id_seq'::regclass)
+ title            | character varying(200) |           | not null | 
+ isbn             | character varying(13)  |           |          | 
+ publication_year | integer                |           |          | 
+ available_copies | integer                |           |          | 1
+Indexes:
+    "books_pkey" PRIMARY KEY, btree (book_id)
+    "books_isbn_key" UNIQUE CONSTRAINT, btree (isbn)
+Referenced by:
+    TABLE "book_authors" CONSTRAINT "book_authors_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    TABLE "loans" CONSTRAINT "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+
+postgres=# \d loans
+                                    Table "public.loans"
+   Column    |     Type      | Collation | Nullable |                Default                 
+-------------+---------------+-----------+----------+----------------------------------------
+ loan_id     | integer       |           | not null | nextval('loans_loan_id_seq'::regclass)
+ member_id   | integer       |           | not null | 
+ book_id     | integer       |           | not null | 
+ load_date   | date          |           |          | CURRENT_DATE
+ due_date    | date          |           | not null | 
+ return_date | date          |           |          | 
+ late_fee    | numeric(10,2) |           |          | 0.00
+Indexes:
+    "loans_pkey" PRIMARY KEY, btree (loan_id)
+Foreign-key constraints:
+    "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    "loans_member_id_fkey" FOREIGN KEY (member_id) REFERENCES members(member_id)
+
+postgres=# \q
+sonya@sonya-laptop:~$
