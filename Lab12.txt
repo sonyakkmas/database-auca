@@ -1,0 +1,267 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# \dt
+          List of relations
+ Schema |   Name   | Type  |  Owner   
+--------+----------+-------+----------
+ public | students | table | postgres
+(1 row)
+
+postgres=# select * from students;
+ student_id | first_name | last_name  | birth_date 
+------------+------------+------------+------------
+          1 | Aibek      | Sharshenov | 2002-05-15
+(1 row)
+
+postgres=# DROP TABLE students;
+DROP TABLE
+postgres=# CREATE TABLE employees (
+  id SERIAL PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  last_name  TEXT NOT NULL,
+  salary     NUMERIC(10,2) NOT NULL CHECK (salary >= 0)
+);
+CREATE TABLE
+postgres=# INSERT INTO employees (first_name, last_name, salary) VALUES
+  ('Alice', 'Nguyen', 72000.00),
+  ('Ben',   'Okafor', 55000.00),
+  ('Carla', 'Romero', 81000.00);
+INSERT 0 3
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  
+----+------------+-----------+----------
+  1 | Alice      | Nguyen    | 72000.00
+  2 | Ben        | Okafor    | 55000.00
+  3 | Carla      | Romero    | 81000.00
+(3 rows)
+
+postgres=# SELECT name, last_name FROM employees;
+ERROR:  column "name" does not exist
+LINE 1: SELECT name, last_name FROM employees;
+               ^
+postgres=# SELECT first_name, last_name FROM employees;
+ first_name | last_name 
+------------+-----------
+ Alice      | Nguyen
+ Ben        | Okafor
+ Carla      | Romero
+(3 rows)
+
+postgres=# SELECT first_name, last_name, salary * 0.10 AS potential_bonus FROM employees;
+ first_name | last_name | potential_bonus 
+------------+-----------+-----------------
+ Alice      | Nguyen    |       7200.0000
+ Ben        | Okafor    |       5500.0000
+ Carla      | Romero    |       8100.0000
+(3 rows)
+
+postgres=# ALTER TABLE employees
+  ADD COLUMN department TEXT;
+ALTER TABLE
+postgres=# UPDATE employees e
+SET department = v.department
+FROM (VALUES
+  ('Alice','Nguyen','Engineering'),
+  ('Ben','Okafor','Sales'),
+  ('Carla','Romero','Finance')
+) AS v(first_name,last_name,department)
+WHERE e.first_name = v.first_name
+  AND e.last_name  = v.last_name;
+UPDATE 3
+postgres=# \d employees
+                                 Table "public.employees"
+   Column   |     Type      | Collation | Nullable |                Default                
+------------+---------------+-----------+----------+---------------------------------------
+ id         | integer       |           | not null | nextval('employees_id_seq'::regclass)
+ first_name | text          |           | not null | 
+ last_name  | text          |           | not null | 
+ salary     | numeric(10,2) |           | not null | 
+ department | text          |           |          | 
+Indexes:
+    "employees_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "employees_salary_check" CHECK (salary >= 0::numeric)
+
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  
+----+------------+-----------+----------+-------------
+  1 | Alice      | Nguyen    | 72000.00 | Engineering
+  2 | Ben        | Okafor    | 55000.00 | Sales
+  3 | Carla      | Romero    | 81000.00 | Finance
+(3 rows)
+
+postgres=# SELECT first_name, last_name, salary FROM employees WHERE department = 'Sales';
+ first_name | last_name |  salary  
+------------+-----------+----------
+ Ben        | Okafor    | 55000.00
+(1 row)
+
+postgres=# SELECT first_name, last_name FROM employees WHERE salary > 70000 AND department = 'Engineering';
+ first_name | last_name 
+------------+-----------
+ Alice      | Nguyen
+(1 row)
+
+postgres=# SELECT first_name, last_name FROM employees WHERE salary BETWEEN 60000 AND 90000;
+ first_name | last_name 
+------------+-----------
+ Alice      | Nguyen
+ Carla      | Romero
+(2 rows)
+
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  
+----+------------+-----------+----------+-------------
+  1 | Alice      | Nguyen    | 72000.00 | Engineering
+  2 | Ben        | Okafor    | 55000.00 | Sales
+  3 | Carla      | Romero    | 81000.00 | Finance
+(3 rows)
+
+postgres=# SELECT first_name, department FROM employees WHERE last_name LIKE 'R%';
+ first_name | department 
+------------+------------
+ Carla      | Finance
+(1 row)
+
+postgres=# SELECT first_name, last_name, department FROM employees WHERE first_name LIKE '%ce';
+ first_name | last_name | department  
+------------+-----------+-------------
+ Alice      | Nguyen    | Engineering
+(1 row)
+
+postgres=# ALTER TABLE employees
+  ADD COLUMN email TEXT;
+ALTER TABLE
+postgres=# UPDATE employees e
+SET email = lower(v.email)
+FROM (VALUES
+  ('Alice','Nguyen','alice.nguyen@gmail.com'),
+  ('Ben','Okafor','ben.okafor@yandex.ru'),
+  ('Carla','Romero','carla.romero@yahoo.com')
+) AS v(first_name,last_name,email)
+WHERE e.first_name = v.first_name
+  AND e.last_name  = v.last_name;
+UPDATE 3
+postgres=# SELECT email FROM employees WHERE email ILIKE '%@gmail.com';
+         email          
+------------------------
+ alice.nguyen@gmail.com
+(1 row)
+
+postgres=# SELECT first_name, last_name
+FROM employees
+WHERE first_name ~ '^[AB]';
+ first_name | last_name 
+------------+-----------
+ Alice      | Nguyen
+ Ben        | Okafor
+(2 rows)
+
+postgres=# SELECT email
+FROM employees
+WHERE email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$';
+         email          
+------------------------
+ alice.nguyen@gmail.com
+ ben.okafor@yandex.ru
+ carla.romero@yahoo.com
+(3 rows)
+
+postgres=# ALTER TABLE employees
+  ADD COLUMN department_id INT;
+ALTER TABLE
+postgres=# UPDATE employees
+SET department_id = CASE department
+  WHEN 'Engineering' THEN 3
+  WHEN 'Sales'       THEN 5
+  WHEN 'Finance'     THEN 5
+  ELSE NULL
+END;
+UPDATE 3
+postgres=# SELECT first_name, last_name, department
+FROM employees
+WHERE department_id IN (3, 5, 7);
+ first_name | last_name | department  
+------------+-----------+-------------
+ Alice      | Nguyen    | Engineering
+ Ben        | Okafor    | Sales
+ Carla      | Romero    | Finance
+(3 rows)
+
+postgres=# CREATE TABLE sales (
+  id SERIAL PRIMARY KEY,
+  employee_id INT NOT NULL REFERENCES employees(id),
+  amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
+  sale_ts TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE TABLE
+postgres=# INSERT INTO sales (employee_id, amount) VALUES
+  ((SELECT id FROM employees WHERE first_name='Alice' AND last_name='Nguyen'), 1500.00),
+  ((SELECT id FROM employees WHERE first_name='Ben'   AND last_name='Okafor'),  900.00),
+  ((SELECT id FROM employees WHERE first_name='Carla' AND last_name='Romero'), 2200.00);
+INSERT 0 3
+postgres=# SELECT * FROM sales;
+ id | employee_id | amount  |          sale_ts           
+----+-------------+---------+----------------------------
+  1 |           1 | 1500.00 | 2025-09-18 01:18:59.227087
+  2 |           2 |  900.00 | 2025-09-18 01:18:59.227087
+  3 |           3 | 2200.00 | 2025-09-18 01:18:59.227087
+(3 rows)
+
+postgres=# SELECT first_name, last_name
+FROM employees e
+WHERE EXISTS (
+  SELECT 1
+  FROM sales s
+  WHERE s.employee_id = e.id AND s.amount > 1000
+);
+ first_name | last_name 
+------------+-----------
+ Alice      | Nguyen
+ Carla      | Romero
+(2 rows)
+
+postgres=# SELECT first_name, last_name, salary,
+  CASE
+    WHEN salary > 100000 THEN 'Senior'
+    WHEN salary BETWEEN 60000 AND 100000 THEN 'Mid-Level'
+    ELSE 'Junior'
+  END AS employee_level
+FROM employees;
+ first_name | last_name |  salary  | employee_level 
+------------+-----------+----------+----------------
+ Alice      | Nguyen    | 72000.00 | Mid-Level
+ Ben        | Okafor    | 55000.00 | Junior
+ Carla      | Romero    | 81000.00 | Mid-Level
+(3 rows)
+
+postgres=# INSERT INTO employees
+  (first_name, last_name, salary, department, email, department_id)
+VALUES
+  ('Mina',  'Shah',  90000.00, 'Engineering', 'mina.shah@gmail.com', 3),
+  ('Diego', 'Lopez', 60000.00, 'Sales',       'diego.lopez@gmail.com', 5);
+INSERT 0 2
+postgres=# WITH department_averages AS (
+  SELECT department, AVG(salary) AS avg_salary
+  FROM employees
+  GROUP BY department
+)
+SELECT
+  e.first_name || ' ' || e.last_name AS name,
+  e.salary,
+  e.department,
+  da.avg_salary
+FROM employees e
+JOIN department_averages da
+  ON e.department = da.department
+WHERE e.salary > da.avg_salary;
+    name     |  salary  | department  |     avg_salary     
+-------------+----------+-------------+--------------------
+ Mina Shah   | 90000.00 | Engineering | 81000.000000000000
+ Diego Lopez | 60000.00 | Sales       | 57500.000000000000
+(2 rows)
+
+postgres=# \q
+sonya@sonya-laptop:~$

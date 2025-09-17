@@ -18,6 +18,8 @@ Lab7.txt  — Primary keys: primary keys (inline/named), composite PKs,
 Lab8.txt  — Foreign Keys and Relationships: defining FKs, rebuilding tables, join queries
 Lab9.txt  — Database Design Basics: normalization examples
 Lab10.txt — Viewing Database and Table Structure
+Lab11.txt — Basic Data Operations: Insert, Update, Delete Statements & Bulk Operations
+Lab12.txt — Querying Data: computed columns & aliases, LIKE/ILIKE/regex filters, CASE, EXISTS/IN, GROUP BY with CTE
 ```
 
 ---
