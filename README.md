@@ -10,13 +10,13 @@ This repository contains completed laboratory works for a university Database co
 ## Repository structure
 
 ```
-Lab3.txt  — Basic psql commands: list DBs, switch connections, create/insert/select/drop a simple table
-Lab4.txt  — First SQL Query: PK, NOT NULL/UNIQUE, inserts, filtering, ordering, limiting
-Lab5.txt  — Databases: create/drop database workflow
-Lab6.txt  — Tables, Data Types and Constraints: DROP/CREATE, ALTER TYPE, add UNIQUE, rename column/table, TEMP tables
-Lab7.txt  — Primary keys: primary keys (inline/named), composite PKs, 
-Lab8.txt  — Foreign Keys and Relationships: defining FKs, rebuilding tables, join queries
-Lab9.txt  — Database Design Basics: normalization examples
+Lab03.txt  — Basic psql commands: list DBs, switch connections, create/insert/select/drop a simple table
+Lab04.txt  — First SQL Query: PK, NOT NULL/UNIQUE, inserts, filtering, ordering, limiting
+Lab05.txt  — Databases: create/drop database workflow
+Lab06.txt  — Tables, Data Types and Constraints: DROP/CREATE, ALTER TYPE, add UNIQUE, rename column/table, TEMP tables
+Lab07.txt  — Primary keys: primary keys (inline/named), composite PKs, 
+Lab08.txt  — Foreign Keys and Relationships: defining FKs, rebuilding tables, join queries
+Lab09.txt  — Database Design Basics: normalization examples
 Lab10.txt — Viewing Database and Table Structure
 Lab11.txt — Basic Data Operations: Insert, Update, Delete Statements & Bulk Operations
 Lab12.txt — Querying Data: computed columns & aliases, LIKE/ILIKE/regex filters, CASE, EXISTS/IN, GROUP BY with CTE
