@@ -1,0 +1,309 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# \dt
+           List of relations
+ Schema |   Name    | Type  |  Owner   
+--------+-----------+-------+----------
+ public | employees | table | postgres
+ public | sales     | table | postgres
+(2 rows)
+
+postgres=# SELECT COUNT(*) AS total_employees FROM employees;
+ total_employees 
+-----------------
+               5
+(1 row)
+
+postgres=# SELECT COUNT(email) AS employees_with_email FROM employees;
+ employees_with_email 
+----------------------
+                    5
+(1 row)
+
+postgres=# SELECT COUNT(*) FROM (SELECT first_name FROM employees WHERE salary > 70000) AS high_paying_employee;
+ count 
+-------
+     3
+(1 row)
+
+postgres=# SELECT COUNT (DISTINCT department) AS unique_departments FROM employees;
+ unique_departments 
+--------------------
+                  3
+(1 row)
+
+postgres=# SELECT * FROM sales;
+ id | employee_id | amount  |          sale_ts           
+----+-------------+---------+----------------------------
+  1 |           1 | 1500.00 | 2025-09-18 01:18:59.227087
+  2 |           2 |  900.00 | 2025-09-18 01:18:59.227087
+  3 |           3 | 2200.00 | 2025-09-18 01:18:59.227087
+(3 rows)
+
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  |         email          | department_id 
+----+------------+-----------+----------+-------------+------------------------+---------------
+  1 | Alice      | Nguyen    | 72000.00 | Engineering | alice.nguyen@gmail.com |             3
+  2 | Ben        | Okafor    | 55000.00 | Sales       | ben.okafor@yandex.ru   |             5
+  3 | Carla      | Romero    | 81000.00 | Finance     | carla.romero@yahoo.com |             5
+  4 | Mina       | Shah      | 90000.00 | Engineering | mina.shah@gmail.com    |             3
+  5 | Diego      | Lopez     | 60000.00 | Sales       | diego.lopez@gmail.com  |             5
+(5 rows)
+
+postgres=# SELECT SUM(amount) AS revenue FROM sales;
+ revenue 
+---------
+ 4600.00
+(1 row)
+
+postgres=# SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department;
+ department  | total_salary 
+-------------+--------------
+ Finance     |     81000.00
+ Engineering |    162000.00
+ Sales       |    115000.00
+(3 rows)
+
+postgres=# ALTER TABLE employees
+  ADD COLUMN age INT;
+ALTER TABLE
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  |         email          | department_id | age 
+----+------------+-----------+----------+-------------+------------------------+---------------+-----
+  1 | Alice      | Nguyen    | 72000.00 | Engineering | alice.nguyen@gmail.com |             3 |    
+  2 | Ben        | Okafor    | 55000.00 | Sales       | ben.okafor@yandex.ru   |             5 |    
+  3 | Carla      | Romero    | 81000.00 | Finance     | carla.romero@yahoo.com |             5 |    
+  4 | Mina       | Shah      | 90000.00 | Engineering | mina.shah@gmail.com    |             3 |    
+  5 | Diego      | Lopez     | 60000.00 | Sales       | diego.lopez@gmail.com  |             5 |    
+(5 rows)
+
+postgres=# UPDATE employees e
+SET age = v.age
+FROM (VALUES
+  ('Alice','Nguyen', 46),
+  ('Ben','Okafor', 23),
+  ('Carla','Romero', 52),
+  ('Mina','Shah',   49),
+  ('Diego','Lopez', 31)
+) AS v(first_name, last_name, age)
+WHERE e.first_name = v.first_name
+  AND e.last_name  = v.last_name;
+UPDATE 5
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  |         email          | department_id | age 
+----+------------+-----------+----------+-------------+------------------------+---------------+-----
+  1 | Alice      | Nguyen    | 72000.00 | Engineering | alice.nguyen@gmail.com |             3 |  46
+  2 | Ben        | Okafor    | 55000.00 | Sales       | ben.okafor@yandex.ru   |             5 |  23
+  3 | Carla      | Romero    | 81000.00 | Finance     | carla.romero@yahoo.com |             5 |  52
+  4 | Mina       | Shah      | 90000.00 | Engineering | mina.shah@gmail.com    |             3 |  49
+  5 | Diego      | Lopez     | 60000.00 | Sales       | diego.lopez@gmail.com  |             5 |  31
+(5 rows)
+
+postgres=# SELECT department, AVG(age) as avg_age FROM employees GROUP BY department;
+ department  |       avg_age       
+-------------+---------------------
+ Finance     | 52.0000000000000000
+ Engineering | 47.5000000000000000
+ Sales       | 27.0000000000000000
+(3 rows)
+
+postgres=# SELECT MAX(salary) AS highest_salary, MIN(salary) as lowest_salary FROM employees;
+ highest_salary | lowest_salary 
+----------------+---------------
+       90000.00 |      55000.00
+(1 row)
+
+postgres=# SELECT department, MAX(age) AS oldest_employee FROM employees GROUP BY department;
+ department  | oldest_employee 
+-------------+-----------------
+ Finance     |              52
+ Engineering |              49
+ Sales       |              31
+(3 rows)
+
+postgres=# SELECT department, STRING_AGG(first_name, ', ') AS employee_names FROM employees GROUP BY department;
+ department  | employee_names 
+-------------+----------------
+ Finance     | Carla
+ Engineering | Alice, Mina
+ Sales       | Ben, Diego
+(3 rows)
+
+postgres=# SELECT department, ARRAY_AGG(salary) AS salary_array FROM employees GROUP BY department;
+ department  |    salary_array     
+-------------+---------------------
+ Finance     | {81000.00}
+ Engineering | {72000.00,90000.00}
+ Sales       | {55000.00,60000.00}
+(3 rows)
+
+postgres=# SELECT department, ARRAY_AGG(first_name ORDER BY last_name) AS employees FROM employees GROUP BY department;
+ department  |  employees   
+-------------+--------------
+ Engineering | {Alice,Mina}
+ Finance     | {Carla}
+ Sales       | {Diego,Ben}
+(3 rows)
+
+postgres=# SELECT department, STDDEV(salary) AS salary_std_dev, VARIANCE(salary) AS salary_variance FROM employees GROUP BY department;
+ department  |  salary_std_dev   |    salary_variance    
+-------------+-------------------+-----------------------
+ Finance     |                   |                      
+ Engineering |    12727.92206136 |    162000000.00000000
+ Sales       | 3535.533905932738 | 12500000.000000000000
+(3 rows)
+
+postgres=# SELECT CORR(age, salary) AS age_salary_correlation FROM employees;
+ age_salary_correlation 
+------------------------
+     0.9183870478077324
+(1 row)
+
+postgres=# SELECT 
+    CASE 
+        WHEN age < 30 THEN 'Under 30'
+        WHEN age BETWEEN 30 AND 50 THEN '30-50'
+        ELSE 'Over 50'
+    END AS age_group,
+    COUNT(*) AS employee_count,
+    AVG(salary) AS avg_salary
+FROM employees
+GROUP BY 
+    CASE 
+        WHEN age < 30 THEN 'Under 30'
+        WHEN age BETWEEN 30 AND 50 THEN '30-50'
+        ELSE 'Over 50'
+    END;
+ age_group | employee_count |     avg_salary     
+-----------+----------------+--------------------
+ Under 30  |              1 | 55000.000000000000
+ Over 50   |              1 | 81000.000000000000
+ 30-50     |              3 | 74000.000000000000
+(3 rows)
+
+postgres=# SELECT * FROM sales;
+ id | employee_id | amount  |          sale_ts           
+----+-------------+---------+----------------------------
+  1 |           1 | 1500.00 | 2025-09-18 01:18:59.227087
+  2 |           2 |  900.00 | 2025-09-18 01:18:59.227087
+  3 |           3 | 2200.00 | 2025-09-18 01:18:59.227087
+(3 rows)
+
+postgres=# SELECT 
+    EXTRACT(YEAR FROM sale_ts) AS year,
+    EXTRACT(QUARTER FROM sale_ts) AS quarter,
+    COUNT(*) AS total_sales,
+    SUM(amount) AS total_revenue
+FROM sales
+GROUP BY EXTRACT(YEAR FROM sale_ts), EXTRACT(QUARTER FROM sale_ts)
+ORDER BY year, quarter;
+ year | quarter | total_sales | total_revenue 
+------+---------+-------------+---------------
+ 2025 |       3 |           3 |       4600.00
+(1 row)
+
+postgres=# SELECT * FROM employees;
+ id | first_name | last_name |  salary  | department  |         email          | department_id | age 
+----+------------+-----------+----------+-------------+------------------------+---------------+-----
+  1 | Alice      | Nguyen    | 72000.00 | Engineering | alice.nguyen@gmail.com |             3 |  46
+  2 | Ben        | Okafor    | 55000.00 | Sales       | ben.okafor@yandex.ru   |             5 |  23
+  3 | Carla      | Romero    | 81000.00 | Finance     | carla.romero@yahoo.com |             5 |  52
+  4 | Mina       | Shah      | 90000.00 | Engineering | mina.shah@gmail.com    |             3 |  49
+  5 | Diego      | Lopez     | 60000.00 | Sales       | diego.lopez@gmail.com  |             5 |  31
+(5 rows)
+
+postgres=# SELECT 
+    department,
+    COUNT(*) AS employee_count
+FROM employees
+GROUP BY department
+HAVING COUNT(*) >= 2;
+ department  | employee_count 
+-------------+----------------
+ Engineering |              2
+ Sales       |              2
+(2 rows)
+
+postgres=# SELECT department, AVG(age) as avg_age, AVG(salary) as avg_salary FROM employees GROUP BY department HAVING COUNT(*) >= 1;
+ department  |       avg_age       |     avg_salary     
+-------------+---------------------+--------------------
+ Finance     | 52.0000000000000000 | 81000.000000000000
+ Engineering | 47.5000000000000000 | 81000.000000000000
+ Sales       | 27.0000000000000000 | 57500.000000000000
+(3 rows)
+
+postgres=# SELECT department, AVG(salary) AS dept_avg_salary FROM employees GROUP BY department;
+ department  |  dept_avg_salary   
+-------------+--------------------
+ Finance     | 81000.000000000000
+ Engineering | 81000.000000000000
+ Sales       | 57500.000000000000
+(3 rows)
+
+postgres=# SELECT first_name, last_name, department, salary, AVG(salary) OVER (Partition BY department) AS dept_avg_salary FROM employees;
+ first_name | last_name | department  |  salary  |  dept_avg_salary   
+------------+-----------+-------------+----------+--------------------
+ Alice      | Nguyen    | Engineering | 72000.00 | 81000.000000000000
+ Mina       | Shah      | Engineering | 90000.00 | 81000.000000000000
+ Carla      | Romero    | Finance     | 81000.00 | 81000.000000000000
+ Ben        | Okafor    | Sales       | 55000.00 | 57500.000000000000
+ Diego      | Lopez     | Sales       | 60000.00 | 57500.000000000000
+(5 rows)
+
+postgres=# SELECT 
+    COUNT(*) AS total_rows,
+    COUNT(email) AS non_null_emails,
+    COUNT(*) - COUNT(email) AS null_emails
+FROM employees;
+ total_rows | non_null_emails | null_emails 
+------------+-----------------+-------------
+          5 |               5 |           0
+(1 row)
+
+postgres=# SELECT 
+    department,
+    COUNT(*) AS employee_count,
+    MIN(salary) AS min_salary,
+    MAX(salary) AS max_salary,
+    AVG(salary) AS avg_salary,
+    STDDEV(salary) AS salary_std_dev
+FROM employees
+GROUP BY department
+ORDER BY avg_salary DESC;
+ department  | employee_count | min_salary | max_salary |     avg_salary     |  salary_std_dev   
+-------------+----------------+------------+------------+--------------------+-------------------
+ Finance     |              1 |   81000.00 |   81000.00 | 81000.000000000000 |                  
+ Engineering |              2 |   72000.00 |   90000.00 | 81000.000000000000 |    12727.92206136
+ Sales       |              2 |   55000.00 |   60000.00 | 57500.000000000000 | 3535.533905932738
+(3 rows)
+
+postgres=# SELECT 
+    department,
+    COUNT(*) AS total_employees,
+    COUNT(CASE WHEN salary > 50000 THEN 1 END) AS high_earners 
+FROM employees
+GROUP BY department;
+ department  | total_employees | high_earners 
+-------------+-----------------+--------------
+ Finance     |               1 |            1
+ Engineering |               2 |            2
+ Sales       |               2 |            2
+(3 rows)
+
+postgres=# SELECT 
+    department,
+    COUNT(*) AS dept_count,
+    COUNT(*)::FLOAT / (SELECT COUNT(*) FROM employees) * 100 AS percentage
+FROM employees
+GROUP BY department
+ORDER BY percentage DESC;
+ department  | dept_count | percentage 
+-------------+------------+------------
+ Engineering |          2 |         40
+ Sales       |          2 |         40
+ Finance     |          1 |         20
+(3 rows)
+postgres=# \q
+sonya@sonya-laptop:~$

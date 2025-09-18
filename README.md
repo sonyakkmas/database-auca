@@ -17,9 +17,10 @@ Lab06.txt  — Tables, Data Types and Constraints: DROP/CREATE, ALTER TYPE, add 
 Lab07.txt  — Primary keys: primary keys (inline/named), composite PKs, 
 Lab08.txt  — Foreign Keys and Relationships: defining FKs, rebuilding tables, join queries
 Lab09.txt  — Database Design Basics: normalization examples
-Lab10.txt — Viewing Database and Table Structure
-Lab11.txt — Basic Data Operations: Insert, Update, Delete Statements & Bulk Operations
-Lab12.txt — Querying Data: computed columns & aliases, LIKE/ILIKE/regex filters, CASE, EXISTS/IN, GROUP BY with CTE
+Lab10.txt  — Viewing Database and Table Structure
+Lab11.txt  — Basic Data Operations: Insert, Update, Delete Statements & Bulk Operations
+Lab12.txt  — Querying Data: computed columns & aliases, LIKE/ILIKE/regex filters, CASE, EXISTS/IN, GROUP BY with CTE
+Lab13.txt  — Aggregate Functions: COUNT(), SUM(), AVG(), MAX(), MIN(), STRING_AGG(), ARRAY_AGG(), GROUP BY, HAVING, and Window Functions.
 ```
 
 ---
