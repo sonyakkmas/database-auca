@@ -1,0 +1,167 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# SELECT c.name,
+       (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.customer_id) AS order_count
+FROM customers c;
+     name     | order_count 
+--------------+-------------
+ Ada Lovelace |           2
+ Ada Lovelace |           0
+(2 rows)
+
+postgres=# WITH avg_total AS (
+  SELECT AVG(total_amount) AS avg_amt FROM orders
+)
+SELECT o.order_id, o.total_amount
+FROM orders o, avg_total a
+WHERE o.total_amount > a.avg_amt;
+ order_id | total_amount 
+----------+--------------
+        1 |        69.48
+(1 row)
+
+postgres=# WITH RECURSIVE nums(n) AS (
+  SELECT 1
+  UNION ALL
+  SELECT n + 1 FROM nums WHERE n < 10
+)
+SELECT n FROM nums;
+ n  
+----
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+(10 rows)
+
+postgres=# SELECT customer_id
+FROM orders
+WHERE order_date >= DATE '2025-01-01' AND order_date < DATE '2026-01-01'
+INTERSECT
+SELECT customer_id
+FROM orders
+WHERE order_date >= DATE '2024-01-01' AND order_date < DATE '2025-01-01';
+ customer_id 
+-------------
+(0 rows)
+
+postgres=# SELECT product_id
+FROM products
+EXCEPT
+SELECT product_id
+FROM order_items;
+ product_id 
+------------
+(0 rows)
+
+postgres=# SELECT
+  o.customer_id,
+  o.order_id,
+  o.order_date,
+  o.total_amount,
+  ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY o.order_date, o.order_id)     AS order_seq,
+  SUM(o.total_amount) OVER (PARTITION BY o.customer_id ORDER BY o.order_date, o.order_id
+                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)          AS running_total
+FROM orders o;
+ customer_id | order_id | order_date | total_amount | order_seq | running_total 
+-------------+----------+------------+--------------+-----------+---------------
+           1 |        1 | 2025-09-30 |        69.48 |         1 |         69.48
+           1 |        2 | 2025-10-01 |         0.00 |         2 |         69.48
+(2 rows)
+
+postgres=# SELECT
+  c.name,
+  SUM(CASE WHEN o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+           THEN o.total_amount ELSE 0 END) AS y2025,
+  SUM(CASE WHEN o.order_date >= DATE '2024-01-01' AND o.order_date < DATE '2025-01-01'
+           THEN o.total_amount ELSE 0 END) AS y2024
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.customer_id
+GROUP BY c.name
+ORDER BY c.name;
+     name     | y2025 | y2024 
+--------------+-------+-------
+ Ada Lovelace | 69.48 |     0
+(1 row)
+
+postgres=# WITH per_customer AS (
+  SELECT
+    c.customer_id, c.name,
+    SUM(CASE WHEN o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+             THEN o.total_amount ELSE 0 END) AS y2025,
+    SUM(CASE WHEN o.order_date >= DATE '2024-01-01' AND o.order_date < DATE '2025-01-01'
+             THEN o.total_amount ELSE 0 END) AS y2024
+  FROM customers c
+  LEFT JOIN orders o ON o.customer_id = c.customer_id
+  GROUP BY c.customer_id, c.name
+)
+SELECT
+  customer_id,
+  name,
+  yr AS year,
+  amt AS total_amount
+FROM per_customer
+CROSS JOIN LATERAL (VALUES
+  ('2025', y2025),
+  ('2024', y2024)
+) AS u(yr, amt)
+WHERE amt <> 0
+ORDER BY name, year;
+ customer_id |     name     | year | total_amount 
+-------------+--------------+------+--------------
+           1 | Ada Lovelace | 2025 |        69.48
+(1 row)
+
+postgres=# SELECT
+  c.customer_id,
+  c.name,
+  COUNT(o.*)                                                   AS orders_total,
+  COUNT(*) FILTER (WHERE o.total_amount >= 100)                AS big_orders,
+  SUM(o.total_amount) FILTER (
+    WHERE o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+  )                                                            AS spend_2025
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.customer_id
+GROUP BY c.customer_id, c.name
+ORDER BY c.name;
+ customer_id |     name     | orders_total | big_orders | spend_2025 
+-------------+--------------+--------------+------------+------------
+           2 | Ada Lovelace |            0 |          0 |           
+           1 | Ada Lovelace |            2 |          0 |      69.48
+(2 rows)
+
+postgres=# SELECT
+  o.order_id,
+  c.name,
+  o.order_date,
+  o.total_amount,
+  CASE
+    WHEN o.total_amount >= 100 THEN 'High'
+    WHEN o.total_amount >= 50  THEN 'Medium'
+    ELSE 'Low'
+  END AS size_bucket
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+ORDER BY
+  CASE
+    WHEN o.total_amount >= 100 THEN 1
+    WHEN o.total_amount >= 50  THEN 2
+    ELSE 3
+  END,
+  o.order_date DESC, o.order_id DESC;
+ order_id |     name     | order_date | total_amount | size_bucket 
+----------+--------------+------------+--------------+-------------
+        1 | Ada Lovelace | 2025-09-30 |        69.48 | Medium
+        2 | Ada Lovelace | 2025-10-01 |         0.00 | Low
+(2 rows)
+
+postgres=# \q
+sonya@sonya-laptop:~$ 

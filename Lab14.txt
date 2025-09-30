@@ -1,0 +1,213 @@
+sonya@sonya-laptop:~$ psql -U postgres -d postgres -p 5432
+psql (14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Type "help" for help.
+
+postgres=# CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+CREATE TABLE
+postgres=# CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(customer_id),
+    order_date DATE,
+    total_amount DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id;
+ name | email | order_date | total_amount 
+------+-------+------------+--------------
+(0 rows)
+
+postgres=# INSERT INTO customers (name, email)
+VALUES ('Ada Lovelace', 'ada@example.com')
+RETURNING customer_id;
+ customer_id 
+-------------
+           1
+(1 row)
+
+INSERT 0 1
+postgres=# INSERT INTO orders (customer_id, order_date, total_amount)
+VALUES (1, '2025-09-30', 123.45);
+INSERT 0 1
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount 
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 row)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount 
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 row)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+RIGHT JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount 
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 row)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+FULL OUTER JOIN orders o ON c.customer_id = o.customer_id;
+     name     |      email      | order_date | total_amount 
+--------------+-----------------+------------+--------------
+ Ada Lovelace | ada@example.com | 2025-09-30 |       123.45
+(1 row)
+postgres=# ALTER TABLE orders ADD COLUMN product_name text;
+ALTER TABLE
+postgres=# UPDATE orders SET product_name = 'Widget' WHERE order_id = 1;
+UPDATE 1
+postgres=# SELECT c.name, o.product_name
+FROM customers c
+CROSS JOIN orders o;
+     name     | product_name 
+--------------+--------------
+ Ada Lovelace | Widget
+(1 row)
+postgres=# CREATE TABLE IF NOT EXISTS products (
+  product_id   SERIAL PRIMARY KEY,
+  product_name TEXT        NOT NULL,
+  price        NUMERIC(10,2) NOT NULL CHECK (price >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  order_item_id SERIAL PRIMARY KEY,
+  order_id      INTEGER NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+  product_id    INTEGER NOT NULL REFERENCES products(product_id),
+  quantity      INTEGER NOT NULL CHECK (quantity > 0)
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# INSERT INTO products (product_name, price) VALUES
+  ('Widget', 19.99),
+  ('Gadget', 29.50);
+INSERT 0 2
+postgres=# INSERT INTO customers (name, email)
+VALUES ('Ada Lovelace', 'ada@example.com')
+RETURNING customer_id;
+ customer_id 
+-------------
+           2
+(1 row)
+
+INSERT 0 1
+postgres=# INSERT INTO orders (customer_id, order_date, total_amount)
+VALUES (1, CURRENT_DATE, 0.00)
+RETURNING order_id;
+ order_id 
+----------
+        2
+(1 row)
+
+INSERT 0 1
+postgres=# WITH p AS (
+  SELECT product_id, product_name FROM products
+)
+INSERT INTO order_items (order_id, product_id, quantity)
+SELECT 1 AS order_id, p1.product_id, 2 AS quantity FROM p p1 WHERE p1.product_name = 'Widget'
+UNION ALL
+SELECT 1, p2.product_id, 1 FROM p p2 WHERE p2.product_name = 'Gadget';
+INSERT 0 2
+postgres=# UPDATE orders o
+SET total_amount = sub.sum_line
+FROM (
+  SELECT oi.order_id, SUM(oi.quantity * p.price) AS sum_line
+  FROM order_items oi
+  JOIN products p ON p.product_id = oi.product_id
+  GROUP BY oi.order_id
+) sub
+WHERE o.order_id = sub.order_id;
+UPDATE 1
+postgres=# SELECT c.name, o.order_date, oi.quantity, p.product_name, p.price
+FROM customers c
+INNER JOIN orders o       ON c.customer_id = o.customer_id
+INNER JOIN order_items oi ON o.order_id = oi.order_id
+INNER JOIN products p     ON oi.product_id = p.product_id;
+     name     | order_date | quantity | product_name | price 
+--------------+------------+----------+--------------+-------
+ Ada Lovelace | 2025-09-30 |        2 | Widget       | 19.99
+ Ada Lovelace | 2025-09-30 |        1 | Gadget       | 29.50
+(2 rows)
+postgres=# SELECT
+  o1.customer_id,
+  o1.order_id  AS order_id_a,
+  o1.order_date AS order_date_a,
+  o2.order_id  AS order_id_b,
+  o2.order_date AS order_date_b
+FROM orders o1
+JOIN orders o2
+  ON o1.customer_id = o2.customer_id
+ AND o1.order_id < o2.order_id
+ORDER BY o1.customer_id, order_id_a, order_id_b;
+ customer_id | order_id_a | order_date_a | order_id_b | order_date_b 
+-------------+------------+--------------+------------+--------------
+           1 |          1 | 2025-09-30   |          2 | 2025-10-01
+(1 row)
+
+postgres=# SELECT c.customer_id, c.name, o.order_id, o.order_date, o.total_amount
+FROM customers c
+JOIN orders o
+  ON o.customer_id = c.customer_id
+ AND o.order_date >= DATE '2025-09-01'
+ AND o.order_date <  DATE '2025-10-01';
+ customer_id |     name     | order_id | order_date | total_amount 
+-------------+--------------+----------+------------+--------------
+           1 | Ada Lovelace |        1 | 2025-09-30 |        69.48
+(1 row)
+
+postgres=# CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+postgres=# SELECT c.name, o.order_date
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     | order_date 
+--------------+------------
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-01
+(2 rows)
+
+postgres=# SELECT c.name, o.order_date
+FROM customers c, orders o;
+     name     | order_date 
+--------------+------------
+ Ada Lovelace | 2025-10-01
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-01
+ Ada Lovelace | 2025-09-30
+(4 rows)
+
+postgres=# SELECT c.name, o.order_date
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id;
+     name     | order_date 
+--------------+------------
+ Ada Lovelace | 2025-09-30
+ Ada Lovelace | 2025-10-01
+(2 rows)
+
+postgres=# SELECT c.name
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.customer_id IS NULL;
+     name     
+--------------
+ Ada Lovelace
+(1 row)
+postgres=# \q
+sonya@sonya-laptop:~$ 

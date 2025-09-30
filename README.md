@@ -21,6 +21,10 @@ Lab10.txt  — Viewing Database and Table Structure
 Lab11.txt  — Basic Data Operations: Insert, Update, Delete Statements & Bulk Operations
 Lab12.txt  — Querying Data: computed columns & aliases, LIKE/ILIKE/regex filters, CASE, EXISTS/IN, GROUP BY with CTE
 Lab13.txt  — Aggregate Functions: COUNT(), SUM(), AVG(), MAX(), MIN(), STRING_AGG(), ARRAY_AGG(), GROUP BY, HAVING, and Window Functions.
+Lab14.txt  — Joining Tables: NNER/LEFT/RIGHT/FULL joins, CROSS (cartesian), SELF join, multi-table joins, explicit vs implicit syntax
+Lab15.txt  — Advanced Querying: ubqueries (scalar/correlated), CTE & recursive CTE, set ops UNION/INTERSECT/EXCEPT, window functions (ROW_NUMBER, SUM() OVER), conditional aggregation & FILTER, CASE bucketing
+Lab16.txt  — Transactions and ACID properties: BEGIN/COMMIT/ROLLBACK, SAVEPOINT, isolation levels (READ COMMITTED/REPEATABLE READ/SERIALIZABLE),
+Lab17.txt  — Data Import/Export and Backup: COPY/\copy (CSV/TSV, headers, NULLs, encodings), pg_dump formats (custom/dir/plain), pg_restore, schema-only/data-only dumps.
 ```
 
 ---
