@@ -25,7 +25,7 @@ Lab14.txt  — Joining Tables: NNER/LEFT/RIGHT/FULL joins, CROSS (cartesian), SE
 Lab15.txt  — Advanced Querying: ubqueries (scalar/correlated), CTE & recursive CTE, set ops UNION/INTERSECT/EXCEPT, window functions (ROW_NUMBER, SUM() OVER), conditional aggregation & FILTER, CASE bucketing
 Lab16.txt  — Transactions and ACID properties: BEGIN/COMMIT/ROLLBACK, SAVEPOINT, isolation levels (READ COMMITTED/REPEATABLE READ/SERIALIZABLE),
 Lab17.txt  — Data Import/Export and Backup: COPY/\copy (CSV/TSV, headers, NULLs, encodings), pg_dump formats (custom/dir/plain), pg_restore, schema-only/data-only dumps.
-Project/   - Implementation of the final project. 
+course_project/   - Implementation of the final project. 
 ```
 
 ---
