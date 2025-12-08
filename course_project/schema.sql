@@ -566,3 +566,125 @@ CREATE TABLE stock_adjustments (
     CONSTRAINT fk_stock_adjustments_approved_by
         FOREIGN KEY (approved_by) REFERENCES users (id)
 );
+
+---------------------------------------------------------------------------------
+----------------------------- INDICES -------------------------------------------
+---------------------------------------------------------------------------------
+
+-- RBAC
+
+CREATE INDEX idx_user_roles_user_id  ON user_roles(user_id);
+CREATE INDEX idx_user_roles_role_id  ON user_roles(role_id);
+
+CREATE INDEX idx_role_permissions_role_id       ON role_permissions(role_id);
+CREATE INDEX idx_role_permissions_permission_id ON role_permissions(permission_id);
+
+CREATE INDEX idx_users_branch_active ON users(branch_id, is_active);
+
+-- Branches & storage
+
+CREATE INDEX idx_branches_type_id       ON branches(type_id);
+CREATE INDEX idx_storage_areas_branch   ON storage_areas(branch_id);
+CREATE INDEX idx_storage_areas_temp_rng ON storage_areas(temperature_range_id);
+
+-- Patients & doctors
+
+CREATE INDEX idx_patients_branch        ON patients(primary_branch_id);
+CREATE INDEX idx_patients_name_dob      ON patients(last_name, first_name, date_of_birth);
+CREATE INDEX idx_doctors_name           ON doctors(last_name, first_name);
+
+-- Prescriptions & related
+
+CREATE INDEX idx_prescriptions_branch   ON prescriptions(branch_id);
+CREATE INDEX idx_prescriptions_status   ON prescriptions(status_id);
+
+CREATE INDEX idx_prescriptions_patient_date ON prescriptions(patient_id, prescription_date DESC);
+CREATE INDEX idx_prescriptions_doctor_date  ON prescriptions(doctor_id, prescription_date DESC);
+
+CREATE INDEX idx_prescription_items_prescription ON prescription_items(prescription_id);
+CREATE INDEX idx_prescription_items_drug        ON prescription_items(drug_id);
+
+CREATE INDEX idx_dispensations_prescription ON dispensations(prescription_id);
+CREATE INDEX idx_dispensations_dispensed_by ON dispensations(dispensed_by);
+
+CREATE INDEX idx_dispensation_items_dispensation ON dispensation_items(dispensation_id);
+CREATE INDEX idx_dispensation_items_batch        ON dispensation_items(batch_id);
+
+-- Sales, sale items, payments
+
+CREATE INDEX idx_sales_patient        ON sales(patient_id);
+CREATE INDEX idx_sales_sold_by        ON sales(sold_by);
+CREATE INDEX idx_sales_sale_type      ON sales(sale_type_id);
+CREATE INDEX idx_sales_date           ON sales(sale_date);
+CREATE INDEX idx_sales_branch_date    ON sales(branch_id, sale_date DESC);
+
+CREATE INDEX idx_sale_items_sale      ON sale_items(sale_id);
+CREATE INDEX idx_sale_items_batch     ON sale_items(batch_id);
+CREATE INDEX idx_sale_items_price     ON sale_items(price_id);
+
+CREATE INDEX idx_payments_sale        ON payments(sale_id);
+CREATE INDEX idx_payments_method_date ON payments(payment_method_id, payment_date);
+
+-- Insurance
+
+CREATE INDEX idx_insurance_plans_company   ON insurance_plans(insurance_company_id);
+
+CREATE INDEX idx_patient_insurance_patient ON patient_insurance(patient_id);
+CREATE INDEX idx_patient_insurance_plan    ON patient_insurance(insurance_plan_id);
+
+CREATE INDEX idx_insurance_claims_sale     ON insurance_claims(sale_id);
+CREATE INDEX idx_insurance_claims_plan     ON insurance_claims(insurance_plan_id);
+CREATE INDEX idx_insurance_claims_status   ON insurance_claims(status_id);
+CREATE INDEX idx_insurance_claims_date     ON insurance_claims(claim_date);
+
+-- Drugs, manufacturers
+
+CREATE INDEX idx_drugs_category       ON drugs(category_id);
+CREATE INDEX idx_drugs_form           ON drugs(form_id);
+CREATE INDEX idx_drugs_name           ON drugs(name);
+
+CREATE INDEX idx_drug_manufacturers_drug         ON drug_manufacturers(drug_id);
+CREATE INDEX idx_drug_manufacturers_manufacturer ON drug_manufacturers(manufacturer_id);
+
+-- Inventory, price list
+
+CREATE INDEX idx_inventory_batches_drug          ON inventory_batches(drug_id);
+CREATE INDEX idx_inventory_batches_storage_area  ON inventory_batches(storage_area_id);
+CREATE INDEX idx_inventory_batches_drug_expiry   ON inventory_batches(drug_id, expiry_date);
+
+CREATE INDEX idx_price_list_items_drug_start ON price_list_items(drug_id, start_date DESC);
+
+-- Purchasing
+
+CREATE INDEX idx_purchase_orders_branch      ON purchase_orders(branch_id);
+CREATE INDEX idx_purchase_orders_supplier    ON purchase_orders(supplier_id);
+CREATE INDEX idx_purchase_orders_status      ON purchase_orders(status_id);
+CREATE INDEX idx_purchase_orders_order_date  ON purchase_orders(order_date);
+CREATE INDEX idx_purchase_orders_creator     ON purchase_orders(created_by);
+
+CREATE INDEX idx_purchase_order_items_order  ON purchase_order_items(purchase_order_id);
+CREATE INDEX idx_purchase_order_items_drug   ON purchase_order_items(drug_id);
+
+CREATE INDEX idx_receipts_po             ON receipts(purchase_order_id);
+CREATE INDEX idx_receipts_received_by    ON receipts(received_by);
+
+CREATE INDEX idx_receipt_items_receipt   ON receipt_items(receipt_id);
+CREATE INDEX idx_receipt_items_drug      ON receipt_items(drug_id);
+
+-- Stock
+
+CREATE INDEX idx_stock_counts_branch_date ON stock_counts(branch_id, count_date);
+CREATE INDEX idx_stock_counts_counted_by  ON stock_counts(counted_by);
+
+CREATE INDEX idx_stock_count_items_count  ON stock_count_items(stock_count_id);
+CREATE INDEX idx_stock_count_items_batch  ON stock_count_items(batch_id);
+
+CREATE INDEX idx_stock_transactions_batch        ON stock_transactions(batch_id);
+CREATE INDEX idx_stock_transactions_branch       ON stock_transactions(branch_id);
+CREATE INDEX idx_stock_transactions_type_date    ON stock_transactions(transaction_type_id, transaction_date DESC);
+CREATE INDEX idx_stock_transactions_performed_by ON stock_transactions(performed_by);
+
+CREATE INDEX idx_stock_adjustments_batch         ON stock_adjustments(batch_id);
+CREATE INDEX idx_stock_adjustments_reason        ON stock_adjustments(reason_id);
+CREATE INDEX idx_stock_adjustments_date          ON stock_adjustments(adjustment_date);
+CREATE INDEX idx_stock_adjustments_approved_by   ON stock_adjustments(approved_by);
