@@ -1,29 +1,48 @@
 # Pharmacy Management Database – Tables Overview
 
-This document explains **what each table means** and **why it is needed** in the pharmacy management system.  
+This document explains **what each table means** and **why it is needed** in the pharmacy management system, based on the current schema.
 
 ---
 
 ## 1. Organization & Locations
 
-### `branches`
+### `branch_types`
 **What it is:**  
-Represents each physical location in the organization: individual pharmacies, warehouses, etc.
+Lookup table for types of branches (e.g. *Pharmacy*, *Warehouse*).
 
 **Why it’s needed:**
-- Many parts of the system are branch-specific: stock, sales, prescriptions.
-- Allows reports like “sales per branch”, “stock per branch”, “expiring drugs in branch A”.
+- Normalizes branch type labels.
+- Allows adding new types without changing the `branches` table.
+
+---
+
+### `branches`
+**What it is:**  
+Each physical location in the organization.
+
+**Why it’s needed:**
+- Many processes are branch-specific: stock, sales, prescriptions, stock counts.
+- Enables reporting like “stock per branch”, “sales per branch”.
+
+---
+
+### `temperature_ranges`
+**What it is:**  
+Lookup table for storage temperature ranges (e.g. *2–8°C*).
+
+**Why it’s needed:**
+- Encodes temperature codes and descriptions in one place.
+- Lets you declare that certain storage areas must meet specific temperature ranges.
 
 ---
 
 ### `storage_areas`
 **What it is:**  
-Sub-locations inside a branch (e.g. “Fridge 1”, “Narcotics Safe”, “Main Shelf A”).
+Sub-locations inside a branch (e.g. “Fridge 1”, “Narcotics Safe”).
 
 **Why it’s needed:**
-- Some drugs have special storage (refrigerated, controlled).
-- Lets you track **where exactly** inside a branch a batch is stored.
-- Useful for audits and safety: “all narcotics are in the safe”, “all insulin is in fridge areas”.
+- Some drugs require special storage (fridge, safe).
+- Lets you track **where exactly** within a branch each batch is stored.
 
 ---
 
@@ -31,76 +50,121 @@ Sub-locations inside a branch (e.g. “Fridge 1”, “Narcotics Safe”, “Mai
 
 ### `users`
 **What it is:**  
-All system users (pharmacists, cashiers, admins, managers).
+All system users (pharmacists, cashiers, admins, etc.).
 
 **Why it’s needed:**
 - Authentication: who can log in.
-- Ownership: who created orders, sales, adjustments, etc.
-- Permissions: combined with roles to control access.
+- Ownership: who created orders, receipts, adjustments, etc.
 
 ---
 
 ### `roles`
 **What it is:**  
-Logical roles like “Admin”, “Pharmacist”, “Junior Pharmacist”, “Cashier”.
+Job roles (e.g. *Admin*, *Pharmacist*, *Cashier*).
 
 **Why it’s needed:**
-- Defines **job roles** in the system.
-- Used to group permissions and assign them to users.
+- Groups permissions logically.
+- Easier to assign capabilities via roles rather than per-user.
 
 ---
 
 ### `permissions`
 **What it is:**  
-Low-level permission codes such as `VIEW_INVENTORY`, `EDIT_PRICES`, `DISPENSE_CONTROLLED`.
+Fine-grained permission codes (e.g. “VIEW_INVENTORY”).
 
 **Why it’s needed:**
-- Fine-grained security: not every pharmacist can do everything.
-- Lets you say “this role can do these actions” instead of hard-coding behavior.
+- Allows detailed control over what actions are allowed.
+- Used via `role_permissions`.
 
 ---
 
 ### `user_roles`
 **What it is:**  
-Bridge table between `users` and `roles` (many-to-many).
+Bridge table between `users` and `roles`.
 
 **Why it’s needed:**
-- A user can have multiple roles (e.g. Pharmacist + Branch Manager).
-- A role can be assigned to many users.
-- Keeps the model flexible without putting a single `role` column in `users`.
+- A user can have multiple roles.
+- A role can be given to many users.
 
 ---
 
 ### `role_permissions`
 **What it is:**  
-Bridge table between `roles` and `permissions` (many-to-many).
+Bridge table between `roles` and `permissions`.
 
 **Why it’s needed:**
-- Lets each role have a set of permissions.
-- Changing what a role can do is just editing these rows, not code.
+- Defines which permissions belong to which role.
+- Changing a role’s abilities is done here, not in code.
 
 ---
 
-## 3. Patients, Doctors & Clinical Data
+## 3. Patients, Prescriptions & Dispensations
 
 ### `patients`
 **What it is:**  
-Information about customers/patients whose prescriptions and sales are tracked.
+Information about patients whose prescriptions and sales are tracked.
 
 **Why it’s needed:**
-- For prescriptions, insurance, and clinical history.
-- Lets you see medication history per patient.
-- Connects to allergies, insurance, sales, and dispensations.
+- For prescriptions, insurance and sales.
+- Links patients to a “home branch” for primary care.
 
 ---
 
 ### `doctors`
 **What it is:**  
-Prescribing doctors (name, license, specialty).
+Prescribing doctors.
 
 **Why it’s needed:**
-- Every prescription should know *who* prescribed it.
-- Supports reports: “top prescribing doctors”, “doctor X’s patients”, etc.
+- Every prescription references a doctor.
+- Used in clinical reports (e.g., prescriptions per doctor).
+
+### `prescriptions_statuses`
+**What it is:**  
+Lookup table for prescription statuses (e.g. *NEW*, *COMPLETED*).
+
+**Why it’s needed:**
+- Normalizes status labels.
+- Supports workflow reporting.
+
+---
+
+### `prescriptions`
+**What it is:**  
+Doctor’s orders for medications for a patient.
+
+**Why it’s needed:**
+- Core clinical document in the system.
+- Everything dispensed for the patient stems from prescriptions.
+
+---
+
+### `prescription_items`
+**What it is:**  
+Line items within a prescription.
+
+**Why it’s needed:**
+- Stores specific medication instructions per drug.
+- Basis for calculating how much must be dispensed.
+
+---
+
+### `dispensations`
+**What it is:**  
+Records of actual dispensing events linked to a prescription.
+
+**Why it’s needed:**
+- Separates clinical dispensing from financial sales.
+- Enables partial dispensing and clinical history tracking.
+
+---
+
+### `dispensation_items`
+**What it is:**  
+Line items for each dispensation.
+
+**Why it’s needed:**
+- Tells exactly which batch and how much was given.
+- Supports batch-level traceability and expiry control.
 
 ---
 
@@ -108,116 +172,124 @@ Prescribing doctors (name, license, specialty).
 
 ### `drug_categories`
 **What it is:**  
-High-level classification of drugs (e.g. “Antibiotic”, “Analgesic”).
+High-level classification of drugs (e.g. Antibiotic, Analgesic).
 
 **Why it’s needed:**
-- Helps organize drug catalog.
-- Useful for reporting and filtering (“show all antibiotics”, category-wise stock).
+- Organizes the drug catalog.
+- Useful for filters and category-based reports.
 
 ---
 
 ### `drug_forms`
 **What it is:**  
-Forms in which drugs are available (tablet, capsule, syrup, injection, cream).
+Drug forms (tablet, capsule, syrup, injection, etc.).
 
 **Why it’s needed:**
-- Each drug row references one form.
-- Useful for dosage, stock, and display (“Paracetamol 500 mg tablet”).
+- Each drug points to a single form.
+- Important for dosage and packaging.
 
 ---
 
 ### `manufacturers`
 **What it is:**  
-Companies that produce drugs (pharmaceutical manufacturers).
+Pharmaceutical manufacturers.
 
 **Why it’s needed:**
-- Some drugs can come from multiple manufacturers.
-- Needed for traceability, quality recalls, and supplier relationships.
+- For traceability and quality issues.
+- A manufacturer can produce many drugs.
 
 ---
 
 ### `drug_manufacturers`
 **What it is:**  
-Bridge table linking `drugs` and `manufacturers` (many-to-many).
+Bridge table between `drugs` and `manufacturers`.
 
 **Why it’s needed:**
-- One drug may be produced by multiple manufacturers.
-- One manufacturer produces many drugs.
-- Supports per-manufacturer product codes if needed.
+- One drug can be produced by multiple manufacturers.
+- Stores optional `product_code` per manufacturer–drug combination.
 
 ---
 
 ### `drugs`
 **What it is:**  
-Central catalog of all products the pharmacy manages (medicines, sometimes non-drug items).
+Central catalog of all products managed by the pharmacy.
 
 **Why it’s needed:**
-- Everything else references this: inventory, prescriptions, sales, pricing.
-- Stores key attributes: name, generic name, category, form, strength, unit, flags like `is_controlled` or `is_refrigerated`.
+- Almost every other table references `drugs`.
+- Holds key clinical and logistical attributes of each product.
 
 ---
 
-## 5. Inventory: Batches & Movement
+## 5. Inventory & Stock Control
 
-### `inventory_batches` (sometimes referenced as `batches`)
+### `transaction_types`
 **What it is:**  
-Each row represents a **specific batch** of a drug in a particular branch/storage area.
+Lookup table listing different kinds of stock transactions (e.g. *PURCHASE*, *SALE*, *ADJUSTMENT*).
+
+**Why it’s needed:**
+- Normalizes transaction types instead of hard-coding text.
+- Makes reports easier (group by transaction type).
+
+---
+
+### `inventory_batches`
+**What it is:**  
+Each row is a **specific batch** of a drug in a specific storage area.
 
 **Why it’s needed:**
 - Batches have expiry dates and batch numbers.
-- Pharmacies must know which batch was given to which patient (for recalls).
-- Allows per-branch, per-batch stock management.
+- Needed for recalls and expiry management.
+- Branch is implied through the storage area.
 
 ---
 
 ### `stock_transactions`
 **What it is:**  
-History of all stock movements (like a “bank statement” for inventory).
-
-Each row = one stock change:
-- purchase received
-- sale/dispense
-- transfer in/out
-- write-off / disposal
-- manual adjustment, etc.
+History of every change in stock for a batch.
 
 **Why it’s needed:**
-- To calculate current stock from all past movements.
-- For audit trail: see who did what, when, and why.
-- Supports reporting like “total usage of drug X last month”.
-
----
-
-### `stock_adjustments`
-**What it is:**  
-Records the **official corrections** when the system quantity is wrong and must be updated.
-
-**Why it’s needed:**
-- When a stock count reveals differences (lost, damaged, counting error).
-- Keeps a record of: old quantity, new quantity, reason, and approval user.
-- Often tied to a corresponding `stock_transactions` row for the numerical change.
+- Lets you calculate current stock by summing movements.
+- Provides an audit trail of who changed stock and why.
 
 ---
 
 ### `stock_counts`
 **What it is:**  
-A stocktaking session. Example: “2025-12 end-of-month count for Branch 1”.
+A stocktaking session at a branch (e.g. monthly stock count).
 
 **Why it’s needed:**
-- Groups all counted items (`stock_count_items`) into one event.
-- Stores who performed the count and when.
-- Necessary for audit and process control.
+- Groups physical counts into a single event.
+- Used to compare system vs actual stock.
 
 ---
 
 ### `stock_count_items`
 **What it is:**  
-Details of what was counted in a stock count (per drug / batch).
+Per-batch results for a given stock count session.
 
 **Why it’s needed:**
-- Compares **system quantity** vs **physically counted quantity**.
-- Basis for deciding if `stock_adjustments` are needed.
-- Allows analysis: which drugs frequently have discrepancies.
+- Shows discrepancies between expected and counted stock.
+- Forms the basis for stock adjustments.
+
+---
+
+### `stock_adjustment_reasons`
+**What it is:**  
+Lookup table listing reasons for stock adjustments (e.g. *Damage*, *Theft*).
+
+**Why it’s needed:**
+- Standardizes reasons for non-transactional stock changes.
+- Makes reporting by reason possible.
+
+---
+
+### `stock_adjustments`
+**What it is:**  
+Official corrections to the quantity of a batch.
+
+**Why it’s needed:**
+- Records manual corrections with reason and approver.
+- Usually linked to corresponding `stock_transactions` entries.
 
 ---
 
@@ -225,210 +297,180 @@ Details of what was counted in a stock count (per drug / batch).
 
 ### `suppliers`
 **What it is:**  
-Companies from which the pharmacy purchases drugs and other products.
+Companies that supply drugs and other items.
 
 **Why it’s needed:**
-- For purchase orders and receipts.
-- For supplier-wise analysis and tracking credit, performance, reliability.
+- Source of purchase orders and receipts.
+- Supports supplier-wise reporting.
+
+---
+
+### `purchase_order_statuses`
+**What it is:**  
+Lookup table for purchase order statuses (e.g. *PENDING*, *RECEIVED*).
+
+**Why it’s needed:**
+- Normalizes status names.
+- Makes it easier to add or change statuses.
 
 ---
 
 ### `purchase_orders`
 **What it is:**  
-Orders placed to suppliers (what the branch requested).
+Orders placed by branches to suppliers.
 
 **Why it’s needed:**
-- Track what was ordered, from whom, and by which branch.
-- Manage order status: pending, partially received, completed, cancelled.
-- Base for comparing ordered vs received quantities and costs.
+- Tracks what each branch requested and from whom.
+- Base for comparing ordered vs received quantities.
 
 ---
 
 ### `purchase_order_items`
 **What it is:**  
-Line items inside a purchase order (which drugs and how much were ordered).
+Line items in a purchase order.
 
 **Why it’s needed:**
-- Links specific drugs to a given order.
-- Later compared with receipt items to detect partial deliveries or backorders.
+- Stores which drugs and how many were ordered.
+- Used to validate supplier deliveries.
 
 ---
 
-### `receipts` (or `goods_receipts`)
+### `receipts`
 **What it is:**  
-Actual physical receipt of goods from a supplier against a purchase order.
+Physical receipts of goods against purchase orders.
 
 **Why it’s needed:**
-- Records when the goods arrived and which PO they belong to.
-- Basis for creating inventory batches and stock transactions.
-- Lets you capture supplier invoice numbers separately from the PO.
+- When the goods actually arrive, this records the reception.
+- Links supplier invoice numbers to internal POs.
 
 ---
 
 ### `receipt_items`
 **What it is:**  
-Line items of a receipt (which drugs, what quantity, what batch, what cost).
+Line items in a receipt.
 
 **Why it’s needed:**
-- Detail of what was physically received vs what was ordered.
-- Each receipt item usually corresponds to:
-  - a new row in `inventory_batches`, and  
-  - an incoming `stock_transaction`.
+- Shows what was actually received.
+- Typically used to create `inventory_batches` and related stock transactions.
 
 ---
 
-## 7. Prescriptions & Dispensations (Clinical Flow)
-
-### `prescriptions`
-**What it is:**  
-Doctor’s orders for a patient: what medicines they should receive.
-
-**Why it’s needed:**
-- Connects doctor, patient, branch, and date.
-- Basis for clinical checking (interactions, dosage, allergies).
-- Status tracking: new, partially dispensed, completed, cancelled.
-
----
-
-### `prescription_items`
-**What it is:**  
-Line items within a prescription (which drug, how much, dosage instructions).
-
-**Why it’s needed:**
-- Detailed instructions per drug: frequency, duration, quantity prescribed.
-- For calculating how many units should be dispensed.
-- Supports clinical audits: “what was prescribed, not just sold.”
-
----
-
-### `dispensations`
-**What it is:**  
-Clinical record of actually giving medicine to a patient.
-
-**Why it’s needed:**
-- Separates **clinical act** of dispensing from **financial sale**.
-- Handles cases:
-  - partial dispensing of a prescription,
-  - non-billed samples, or special programs.
-- Used for patient medication history (what they actually received).
-
----
-
-### `dispensation_items`
-**What it is:**  
-Line items for each dispensation (which drug, from which batch, how much was given).
-
-**Why it’s needed:**
-- Ties dispensing to specific batches for recall and expiry tracking.
-- Often drives stock out transactions.
-- Supports clinical reports like “how much of drug X was dispensed to patient Y”.
-
----
-
-## 8. Insurance & Claims
+## 7. Insurance & Claims
 
 ### `insurance_companies`
 **What it is:**  
 Insurance providers.
 
 **Why it’s needed:**
-- Base entity for plans.
-- Reporting by insurance company.
+- Top-level entity for organizing insurance plans and claims.
 
 ---
 
 ### `insurance_plans`
 **What it is:**  
-Specific plans offered by an insurance company (e.g. “Gold Plan, 80% coverage”).
+Specific plans from an insurance company.
 
 **Why it’s needed:**
-- Each plan can have different coverage rules.
-- Patients enroll into specific plans.
+- Different plans can have different coverage percentages.
+- Patients enrol into specific plans.
 
 ---
 
 ### `patient_insurance`
 **What it is:**  
-Link between `patients` and `insurance_plans` with membership details.
+Links patients to insurance plans.
 
 **Why it’s needed:**
-- Records which plan a patient is on, and validity dates.
-- Used when billing sales to insurance and creating claims.
+- Records coverage details per patient.
+- Used when creating insurance claims.
+
+---
+
+### `insurance_claim_statuses`
+**What it is:**  
+Lookup table with allowed statuses for insurance claims (e.g. *SUBMITTED*, *PAID*).
+
+**Why it’s needed:**
+- Normalizes claim statuses for reporting and workflow logic.
 
 ---
 
 ### `insurance_claims`
 **What it is:**  
-Claims sent to insurance companies for reimbursement of sales.
+Claims sent to insurance companies for specific sales.
 
 **Why it’s needed:**
-- Tracks status: submitted, approved, denied, paid.
-- Links sales to an insurance plan and company.
-- Critical for financial reconciliation and cash flow.
+- Tracks the state of each claim (submitted, approved, denied, etc.).
+- Connects financial data (sales) to insurance reimbursements.
 
 ---
 
-## 9. Sales, Payments & Prices
+## 8. Sales, Payments & Prices
 
-### `sales`
+### `sale_types`
 **What it is:**  
-Financial transaction representing a sale of items to a patient (or walk-in customer).
+Lookup table for types of sales (e.g. *CASH*, *INSURANCE*).
 
 **Why it’s needed:**
-- Stores branch, patient (optional), who sold, and sale time.
-- Basis for revenue reporting, cashier accountability, and receipts.
+- Tells what kind of sale it is overall.
+- Used for high-level revenue analysis.
 
 ---
 
-### `sale_items`
+### `payment_methods`
 **What it is:**  
-Line items of a sale: which drugs, from which batches, and at what price.
+Lookup table for ways customers can pay (e.g. *CASH*, *CARD*).
 
 **Why it’s needed:**
-- Detailed breakdown of each sale.
-- Each row ties to a batch, often triggers stock out.
-- Supports item-level sales analysis.
-
----
-
-### `payments`
-**What it is:**  
-Actual payments made against a sale (could be multiple per sale).
-
-**Why it’s needed:**
-- Supports partial payments and multiple payment methods.
-- Distinguishes sale **amount** from actual **money received**.
-- Important for accounting and reconciliation.
-
----
-
-### `price_lists`
-**What it is:**  
-Price catalog definitions, often per branch and date range (e.g. “Branch 1 2025 price list”).
-
-**Why it’s needed:**
-- Allows time-based and branch-based pricing.
-- You can change prices over time without losing history.
+- Normalizes payment method labels.
+- Multiple payments with different methods can exist per sale.
 
 ---
 
 ### `price_list_items`
 **What it is:**  
-Prices of individual drugs in a specific price list.
+Effective prices per drug with time range.
 
 **Why it’s needed:**
-- Provides the unit price used when creating sales.
-- Enables different prices per branch or period for the same drug.
+- Stores time-bounded pricing for each drug.
+- `sale_items` reference the specific price row used.
+
+---
+
+### `sales`
+**What it is:**  
+Each sale transaction with header information.
+
+**Why it’s needed:**
+- Core financial record capturing “who bought what, where, and when”.
+
+---
+
+### `sale_items`
+**What it is:**  
+Line items inside a sale.
+
+**Why it’s needed:**
+- Connects sales to specific batches and price records.
+- Drives stock decrements via `stock_transactions`.
+
+---
+
+### `payments`
+**What it is:**  
+Individual payments made towards a sale.
+
+**Why it’s needed:**
+- Supports partial and multi-method payments.
+- Keeps payment details separate from the sale header.
 
 ---
 
 ## Summary
 
-- **Master data tables** (`drugs`, `drug_categories`, `drug_forms`, `branches`, `patients`, `users`, etc.)
-
-- **Transaction tables** (`stock_transactions`, `sales`, `dispensations`, `receipts`, etc.)
-
-- **Link/bridge tables** (`user_roles`, `role_permissions`, `drug_manufacturers`, `patient_allergies`, `patient_insurance`)
-
-- **Control/audit tables** (`stock_counts`, `stock_count_items`, `stock_adjustments`) 
+- **Master data tables**: `branches`, `branch_types`, `temperature_ranges`, `storage_areas`, `drugs`, `drug_categories`, `drug_forms`, `manufacturers`, `patients`, `doctors`, etc.
+- **Lookup / status tables**: `transaction_types`, `purchase_order_statuses`, `sale_types`, `payment_methods`, `insurance_claim_statuses`, `prescriptions_statuses`, `stock_adjustment_reasons`.
+- **Bridge tables**: `user_roles`, `role_permissions`, `drug_manufacturers`, `patient_insurance`.
+- **Transaction tables**: `stock_transactions`, `purchase_orders`, `receipts`, `sales`, `prescriptions`, `dispensations`, `insurance_claims`.
+- **Control & audit tables**: `stock_counts`, `stock_count_items`, `stock_adjustments`.
 
