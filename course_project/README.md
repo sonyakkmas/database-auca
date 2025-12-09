@@ -47,7 +47,7 @@ This project meets the following requirements:
   - This improves query performance for large datasets, reducing scan times on tables like `prescriptions`, `sales`, and `stock_transactions`.
 
 ### 5. Backup and Recovery Strategy
-- Detailed in `backup_strategy.md` (forthcoming; outline below):
+- Detailed in `backup_strategy.md`:
   - **Backup**: Use `pg_dump` for logical backups (daily full dumps) and `pg_basebackup` for physical backups (weekly). Store backups offsite with encryption.
   - **Recovery**: Point-in-time recovery (PITR) via WAL archives. Test restores quarterly.
   - **Strategy**: Automated scripts for backups, retention policy (7 daily, 4 weekly, 12 monthly), and monitoring for failures.
