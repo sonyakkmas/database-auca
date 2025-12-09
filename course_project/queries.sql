@@ -2,9 +2,7 @@
 -- 1. BASIC QUERIES
 ----------------------------------------------------
 
-----------------------------------------------------
--- All branch types
-----------------------------------------------------
+---------- All branch types ----------
 
 SELECT id, type, description
 FROM branch_types
@@ -17,9 +15,8 @@ ORDER BY type;
 --   1 | RETAIL   | Retail pharmacy
 -- (3 rows)
 
-----------------------------------------------------
--- All drug categories
-----------------------------------------------------
+
+---------- All drug categories ----------
 
 SELECT id, name, description
 FROM drug_categories
@@ -54,9 +51,7 @@ ORDER BY name;
 --  21 | Vitamins           | Vitamins and minerals
 -- (25 rows)
 
-----------------------------------------------------
--- Controlled drugs only
-----------------------------------------------------
+---------- Controlled drugs ----------
 
 SELECT id, name, strength, is_controlled
 FROM drugs
@@ -66,9 +61,7 @@ WHERE is_controlled = TRUE;
 -- ----+------+----------+---------------
 -- (0 rows)
 
-----------------------------------------------------
--- Doctors with "Pediatrics" specialty
-----------------------------------------------------
+---------- Doctors with "Pediatrics" specialty ----------
 
 SELECT id, first_name, last_name, specialty
 FROM doctors
@@ -79,9 +72,7 @@ WHERE specialty = 'Pediatrics';
 --   2 | James      | Green     | Pediatrics
 -- (1 row)
 
-----------------------------------------------------
---Number of patients per branch
-----------------------------------------------------
+---------- Number of patients per branch ----------
 
 SELECT
     b.name AS branch_name,
@@ -97,9 +88,8 @@ ORDER BY b.name;
 --  Main Pharmacy |             2
 -- (2 rows)
 
-----------------------------------------------------
--- Prescriptions in 2025 only
-----------------------------------------------------
+
+---------- Prescriptions in 2025 only ----------
 
 SELECT
     id,
@@ -117,9 +107,7 @@ ORDER BY prescription_date;
 --   2 |          2 | 2025-03-02        |         1
 -- (2 rows)
 
-----------------------------------------------------
--- List all active users with their branch
-----------------------------------------------------
+---------- List all active users with their branch ----------
 
 SELECT
     u.id,
@@ -140,9 +128,8 @@ ORDER BY b.name, u.last_name, u.first_name;
 --   2 | Bob        | Pharm     | bob.pharm     | Main Pharmacy | t
 -- (3 rows)
 
-----------------------------------------------------
--- All prescriptions with patient & doctor names and status
-----------------------------------------------------
+
+---------- All prescriptions with patient & doctor names and status ----------
 
 SELECT
     pr.id AS prescription_id,
@@ -163,9 +150,8 @@ ORDER BY pr.prescription_date DESC, pr.id;
 --                1 | 2025-03-01        | NEW                 | John Doe     | Emily Brown | Take with food
 -- (2 rows)
 
-----------------------------------------------------
--- Inventory batches with basic info
-----------------------------------------------------
+
+---------- Inventory batches with basic info ----------
 
 SELECT
     ib.id AS batch_id,
@@ -189,9 +175,8 @@ ORDER BY dr.name, ib.expiry_date;
 --         2 | Ibu 200    | BATCH-IBU-001  | 2025-12-31  |         200 |      1.00 | Main Room | Main Pharmacy
 -- (2 rows)
 
-----------------------------------------------------
--- Payments with method and sale info
-----------------------------------------------------
+
+---------- Payments with method and sale info ----------
 
 SELECT
     p.id AS payment_id,
@@ -214,9 +199,8 @@ ORDER BY p.payment_date DESC;
 -- 2. COMPLEX QUERIES
 ----------------------------------------------------
 
-----------------------------------------------------
--- Daily sales summary by branch
-----------------------------------------------------
+---------- Daily sales summary by branch ----------
+
 SELECT
     s.branch_id,
     b.name AS branch_name,
@@ -236,9 +220,8 @@ ORDER BY sale_day DESC, branch_name;
 --          1 | Main Pharmacy | 2025-03-01 |               1 |      94.50000
 -- (2 rows)
 
-----------------------------------------------------
--- Stock on hand per drug and branch
-----------------------------------------------------
+---------- Stock on hand per drug and branch ----------
+
 SELECT
     dr.id AS drug_id,
     dr.name AS drug_name,
@@ -258,9 +241,8 @@ ORDER BY dr.name, branch_name;
 --        2 | Ibu 200    |         1 | Main Pharmacy |         190
 -- (2 rows)
 
-----------------------------------------------------
--- Drugs expiring in the next 90 days with remaining stock
-----------------------------------------------------
+---------- Drugs expiring in the next 90 days with remaining stock ----------
+
 WITH current_stock AS (
     SELECT
         ib.id AS batch_id,
@@ -289,10 +271,8 @@ ORDER BY ib.expiry_date, dr.name;
 --  Ibu 200   | BATCH-IBU-001 | 2025-12-31  | Main Pharmacy |         190
 -- (1 row)
 
+---------- Patient medication history with last prescription date ----------
 
-----------------------------------------------------
--- Patient medication history with last prescription date
-----------------------------------------------------
 SELECT
     p.id,
     p.first_name,
@@ -312,9 +292,7 @@ ORDER BY last_prescription_date DESC NULLS LAST;
 --   1 | John       | Doe       |                   1 |                      1 | 2025-03-01
 -- (2 rows)
 
-----------------------------------------------------
--- Top-selling drug by quantity
-----------------------------------------------------
+---------- Top-selling drug by quantity ----------
 
 SELECT
     dr.id AS drug_id,

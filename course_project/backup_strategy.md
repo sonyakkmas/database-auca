@@ -1,74 +1,89 @@
-# Backup and Recovery Strategy for Pharmacy Management Database
+**Backup & Recovery Strategy – Pharmacy DB**
 
-This document outlines the backup and recovery strategy for the PostgreSQL-based pharmacy management system database. It focuses on regular backups, secure storage, and tested recovery procedures.
+**1. Goals**
 
-## Objectives
-- **Data Protection**: Safeguard against data loss from hardware failures, human errors, cyberattacks, or disasters.
-- **Recovery Time Objective (RTO)**: Aim for recovery within 4 hours for critical incidents.
-- **Recovery Point Objective (RPO)**: Limit data loss to 1 hour (via continuous archiving) or 24 hours (via daily backups).
-- **Compliance**: Encrypt backups and maintain audit logs for sensitive health data.
-- **Testing**: Regularly test restores to ensure reliability.
+* RPO: ≤ 5–15 min.
+* RTO: ≤ 2–4 h.
+* No loss of: patients, prescriptions, sales, inventory, insurance, users/RBAC.
 
-## Backup Types and Tools
-We use PostgreSQL's built-in tools for backups:
-1. **Logical Backups** (using `pg_dump` and `pg_dumpall`):
-   - Exports schema and data in SQL format.
-   - Suitable for smaller databases or migrations.
-   - Advantages: Portable, compressible; can restore to different PostgreSQL versions.
-   - Disadvantages: Slower for large databases; doesn't include server configs.
+---
 
-2. **Physical Backups** (using `pg_basebackup`):
-   - Copies the entire data directory (base backup).
-   - Combined with Write-Ahead Log (WAL) archiving for Point-in-Time Recovery (PITR).
-   - Advantages: Faster restores; supports PITR.
-   - Disadvantages: Larger files; version-specific.
+**2. Backups**
 
-3. **WAL Archiving**:
-   - Continuous archiving of transaction logs (enabled via `archive_mode = on` in `postgresql.conf`).
-   - Allows recovery to any point in time between backups.
+**Logical (pg_dump)**
 
-## Backup Schedule
-- **Daily Logical Backups**: Run `pg_dump` nightly (e.g., via cron job at 2:00 AM) for the entire database. Compress with `gzip`.
-- **Weekly Physical Backups**: Run `pg_basebackup` every Sunday, including WAL files.
-- **Continuous WAL Archiving**: Archive WAL segments every 5 minutes to a dedicated directory.
-- **Retention Policy**:
-  - Keep 7 daily backups.
-  - Keep 4 weekly backups.
-  - Keep 12 monthly backups (archive the last weekly of each month).
-  - Automatically purge older backups using scripts.
+* Daily full dump (night):
 
+```bash
+pg_dump -U pharmacy_app -d pharmacy_db -F c \
+  -f /backups/daily/pharmacy_$(date +%F).dump
+```
 
-## Storage and Security
-- **On-Site Storage**: Store backups on a separate disk or NAS within the server room.
-- **Off-Site Storage**: Replicate backups to cloud storage (e.g., AWS S3 or Google Cloud Storage) using encrypted transfers (HTTPS/TLS).
-- **Encryption**: Use `pg_dump` with `--format=c` for compressed dumps; encrypt files with GPG or AES-256 before off-site transfer.
-- **Access Controls**: Restrict backup directories to root/postgres user; use multi-factor authentication for cloud access.
-- **Monitoring**: Use tools like Nagios or Prometheus to alert on backup failures.
+* Weekly schema-only:
 
-## Recovery Procedures
-1. **Full Restore from Logical Backup**:
-   - Stop the application.
-   - Drop and recreate the database: `dropdb pharmacy_db; createdb pharmacy_db`.
-   - Restore: `gunzip -c backup.sql.gz | psql -U postgres -d pharmacy_db`.
-   - Test data integrity and restart services.
+```bash
+pg_dump -U pharmacy_app -d pharmacy_db -F c -s \
+  -f /backups/schema/pharmacy_schema_$(date +%F).dump
+```
 
-2. **Point-in-Time Recovery (PITR) from Physical Backup**:
-   - Restore base backup: Copy files to data directory or use `pg_basebackup` in recovery mode.
-   - Configure `recovery.conf` (or `postgresql.conf` in newer versions) with `restore_command` to fetch WAL files.
-   - Set `recovery_target_time` to the desired timestamp.
-   - Start PostgreSQL in recovery mode; it will replay WAL logs up to the target.
+**Physical + WAL**
 
-3. **Partial Recovery**:
-   - For specific tables/objects: Use `pg_restore` with `--table` or `--schema` flags on custom-format dumps.
+* `archive_mode = on`
+* `archive_command = 'cp %p /backups/wal/%f'`
+* Daily (or every few days) base backup:
 
+```bash
+pg_basebackup -U replication_user \
+  -D /backups/base/$(date +%F) -F tar -z -X stream -P
+```
 
-## Testing and Maintenance
-- **Quarterly Drills**: Simulate failures and perform full restores on a test server. Document time taken and issues.
-- **Annual Review**: Update strategy based on database growth (current size: ~500 MB; monitor via `pg_database_size`).
-- **Automation**: Use tools like pgBackRest or Barman for advanced management if the system scales.
-- **Documentation**: Maintain logs of all backups/restores in a secure repository.
+---
 
-## Risks and Mitigations
-- **Risk: Backup Corruption**: Mitigate by verifying backups post-creation (e.g., `pg_restore --list`).
-- **Risk: Downtime During Backup**: Use streaming replication for hot backups if high availability is needed.
-- **Risk: Data Breach**: Encrypt all backups and monitor access logs.
+**3. Retention & Storage**
+
+* Local: last 3 days.
+* Backup server: 30 days.
+
+---
+
+**4. Daily backup job**
+
+1. Check DB up + disk space.
+2. Run `pg_basebackup`.
+3. Run daily `pg_dump`.
+4. Verify (exit codes, `pg_restore --list`).
+5. Sync to backup server + cloud.
+6. Delete old backups per retention.
+
+---
+
+**5. Recovery**
+
+**Logical restore**
+
+* For bad migration / deletes:
+
+  * Restore dump to new DB:
+
+  ```bash
+  createdb pharmacy_restore
+
+  pg_restore -U postgres -d pharmacy_restore \
+    /backups/daily/pharmacy_YYYY-MM-DD.dump
+  ```
+
+  * Validate, then switch app or copy needed data.
+
+**Full server failure (PITR)**
+
+1. New Postgres instance.
+2. Restore latest base backup to data dir.
+3. Configure:
+
+```conf
+restore_command = 'cp /backups/wal/%f %p'
+recovery_target_time = 'YYYY-MM-DD HH:MI:SS'
+```
+
+4. Start Postgres, let WAL replay.
+5. Sanity checks, then point app to new server.

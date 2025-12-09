@@ -44,14 +44,14 @@ This project meets the following requirements:
 - **Indexing**: `schema.sql` includes targeted indexes for common query patterns, such as:
   - Composite indexes on frequently filtered/sorted columns (e.g., `idx_prescriptions_patient_date` on `patient_id` and `prescription_date DESC`).
   - Indexes on foreign keys for faster JOINs (e.g., `idx_sales_branch_date`).
-  - This improves query performance for large datasets, reducing scan times on tables like `prescriptions`, `sales`, and `stock_transactions`.
+
 
 ### 5. Backup and Recovery Strategy
-- Detailed in `backup_strategy.md`:
-  - **Backup**: Use `pg_dump` for logical backups (daily full dumps) and `pg_basebackup` for physical backups (weekly). Store backups offsite with encryption.
-  - **Recovery**: Point-in-time recovery (PITR) via WAL archives. Test restores quarterly.
-  - **Strategy**: Automated scripts for backups, retention policy (7 daily, 4 weekly, 12 monthly), and monitoring for failures.
-  - High availability via replication if scaled.
+
+* Detailed in `backup_strategy.md`:
+  * **Backup**: Daily logical `pg_dump` + daily physical `pg_basebackup` with WAL archiving; keep 3 days local, 30 days on backup server.
+  * **Recovery**: Logical restore for bad migrations/deletes; PITR from base backup + WAL for full server failure.
+
 
 
 ## Setup and Usage
