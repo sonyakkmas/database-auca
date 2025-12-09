@@ -19,18 +19,18 @@ pg_dump -U pharmacy_app -d pharmacy_db -F c \
   -f /backups/daily/pharmacy_$(date +%F).dump
 ```
 
-* Weekly schema-only:
+* Weekly dump:
 
 ```bash
 pg_dump -U pharmacy_app -d pharmacy_db -F c -s \
   -f /backups/schema/pharmacy_schema_$(date +%F).dump
 ```
 
-**Physical + WAL**
+**Continious (Physical + WAL)**
 
 * `archive_mode = on`
 * `archive_command = 'cp %p /backups/wal/%f'`
-* Daily (or every few days) base backup:
+* Base backup every 6 hour (4 per day) with continous backups for Point in Time Recovery.
 
 ```bash
 pg_basebackup -U replication_user \
@@ -41,8 +41,9 @@ pg_basebackup -U replication_user \
 
 **3. Retention & Storage**
 
-* Local: last 3 days.
-* Backup server: 30 days.
+* Daily: store last 30 days on a backup server for fast recovery
+* Weekly: store in cloud for 5+ years for compliance
+* Continous: last day locally on backup server
 
 ---
 
